@@ -103,8 +103,10 @@ header {
   align-items:center;
   padding:0 18px;
   gap:0;
-  overflow:hidden;
+  overflow-x:auto;
+  scrollbar-width:none;
 }
+.market-bar::-webkit-scrollbar { display:none; }
 .mi {
   display:flex; align-items:center; gap:7px;
   padding:0 16px 0 0; margin-right:16px;
@@ -780,7 +782,11 @@ function renderDashboard(quote, history, indicators) {
       <div class="panel-header">
         <span class="panel-title">Preço + Volume</span>
         <div class="period-bar">
-          ${['1mo','3mo','6mo','1y','2y'].map(p=>`<button class="period-btn ${p===state.activePeriod?'active':''}" onclick="changePeriod('${p}')">${p}</button>`).join('')}
+          ${[
+  {key:'1mo',label:'1M'},{key:'3mo',label:'3M'},
+  {key:'6mo',label:'6M'},{key:'1y',label:'1A'},
+  {key:'2y',label:'2A'}
+].map(({key,label})=>`<button class="period-btn ${key===state.activePeriod?'active':''}" data-period="${key}" onclick="changePeriod('${key}')">${label}</button>`).join('')}
         </div>
       </div>
       <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
@@ -995,7 +1001,7 @@ function drawBollinger(data) {
 async function changePeriod(period) {
   state.activePeriod = period;
   if (!state.activeTicker) return;
-  document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.textContent===period));
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period===period));
   try {
     const h = await api('/history/' + state.activeTicker + '?period=' + period);
     drawPriceChart(h.data, state._lastQuote?.currency);
