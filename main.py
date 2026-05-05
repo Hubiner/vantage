@@ -69,6 +69,12 @@ def get_meta(ticker: str, stock: Any) -> dict:
             "sector": info.get("sector", ""),
             "pe_ratio": clean(info.get("trailingPE")),
             "dividend_yield": clean(info.get("dividendYield")),
+            "beta": clean(info.get("beta")),
+            "eps": clean(info.get("trailingEps")),
+            "target_price": clean(info.get("targetMeanPrice")),
+            "pb_ratio": clean(info.get("priceToBook")),
+            "revenue": clean(info.get("totalRevenue")),
+            "avg_volume_10d": clean(info.get("averageVolume10days") or info.get("averageVolume")),
         }
     except Exception:
         meta = {
@@ -76,6 +82,12 @@ def get_meta(ticker: str, stock: Any) -> dict:
             "sector": "",
             "pe_ratio": None,
             "dividend_yield": None,
+            "beta": None,
+            "eps": None,
+            "target_price": None,
+            "pb_ratio": None,
+            "revenue": None,
+            "avg_volume_10d": None,
         }
     cache_set(f"meta:{ticker}", meta)
     return meta
@@ -128,6 +140,12 @@ def get_quote(ticker: str):
             "sector": meta["sector"],
             "pe_ratio": meta["pe_ratio"],
             "dividend_yield": meta["dividend_yield"],
+            "beta": meta["beta"],
+            "eps": meta["eps"],
+            "target_price": meta["target_price"],
+            "pb_ratio": meta["pb_ratio"],
+            "revenue": meta["revenue"],
+            "avg_volume_10d": meta["avg_volume_10d"],
             "52w_high": clean(fi_get(fi, "year_high")),
             "52w_low": clean(fi_get(fi, "year_low")),
         }

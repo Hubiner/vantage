@@ -236,7 +236,7 @@ main {
 }
 .quote-ts .refresh-btn:hover { color:var(--accent); border-color:var(--accent); }
 
-.stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px; }
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; }
 .stat { background:var(--bg); border-radius:8px; padding:10px 12px; }
 .stat-label { font-size:10px; color:var(--muted); margin-bottom:4px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
 .stat-value { font-size:13px; font-weight:700; }
@@ -743,9 +743,15 @@ function renderDashboard(quote, history, indicators) {
         <div class="stat"><div class="stat-label">Máxima</div><div class="stat-value pos">${fmt.price(quote.high)}</div></div>
         <div class="stat"><div class="stat-label">Mínima</div><div class="stat-value neg">${fmt.price(quote.low)}</div></div>
         <div class="stat"><div class="stat-label">Volume</div><div id="live-vol" class="stat-value">${fmt.large(quote.volume)}</div></div>
+        <div class="stat"><div class="stat-label">Vol Méd 10d</div><div class="stat-value">${fmt.large(quote.avg_volume_10d)}</div></div>
         <div class="stat"><div class="stat-label">Market Cap</div><div class="stat-value">${fmt.large(quote.market_cap)}</div></div>
         <div class="stat"><div class="stat-label">P/L</div><div class="stat-value">${quote.pe_ratio ? Number(quote.pe_ratio).toFixed(2) : '—'}</div></div>
+        <div class="stat"><div class="stat-label">P/VP</div><div class="stat-value">${quote.pb_ratio ? Number(quote.pb_ratio).toFixed(2) : '—'}</div></div>
+        <div class="stat"><div class="stat-label">EPS TTM</div><div class="stat-value">${quote.eps ? fmt.price(quote.eps) : '—'}</div></div>
+        <div class="stat"><div class="stat-label">Beta</div><div class="stat-value">${quote.beta ? Number(quote.beta).toFixed(2) : '—'}</div></div>
         <div class="stat"><div class="stat-label">Div. Yield</div><div class="stat-value">${quote.dividend_yield ? (quote.dividend_yield*100).toFixed(2)+'%' : '—'}</div></div>
+        <div class="stat"><div class="stat-label">Alvo Analistas</div><div class="stat-value">${quote.target_price ? fmt.price(quote.target_price) : '—'}</div></div>
+        <div class="stat"><div class="stat-label">Receita TTM</div><div class="stat-value">${fmt.large(quote.revenue)}</div></div>
         <div class="stat"><div class="stat-label">Máx 52s</div><div class="stat-value">${fmt.price(quote['52w_high'])}</div></div>
         <div class="stat"><div class="stat-label">Mín 52s</div><div class="stat-value">${fmt.price(quote['52w_low'])}</div></div>
         <div class="stat"><div class="stat-label">RSI 14</div><div class="stat-value">${lastRSI ? lastRSI.toFixed(1) : '—'} ${rsiPill}</div></div>
