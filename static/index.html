@@ -583,21 +583,24 @@ async function renderWatchlist() {
       <button class="watch-remove" onclick="event.stopPropagation();removeFromWatchlist('${t}')" title="Remover">×</button>
     </div>`).join('');
 
-  state.watchlist.forEach(async t => {
-    const id = t.replace(/[^a-z0-9]/gi,'_');
-    try {
-      const q = await api('/quote/' + t);
+  try {
+    const batch = await api('/quotes?tickers=' + state.watchlist.join(','));
+    batch.quotes.forEach(q => {
+      if (q.error) return;
+      const id = q.ticker.replace(/[^a-z0-9]/gi,'_');
       const pEl = document.getElementById('wp-' + id);
       const cEl = document.getElementById('wc-' + id);
       const nEl = document.getElementById('wn-' + id);
       if (pEl) pEl.textContent = fmt.price(q.price);
       if (cEl) { cEl.className = 'watch-chg ' + cc(q.change_pct); cEl.textContent = fmt.pct(q.change_pct); }
       if (nEl) nEl.textContent = q.name;
-    } catch {
-      const pEl = document.getElementById('wp-' + id);
+    });
+  } catch {
+    state.watchlist.forEach(t => {
+      const pEl = document.getElementById('wp-' + t.replace(/[^a-z0-9]/gi,'_'));
       if (pEl) { pEl.textContent = '—'; pEl.style.color = 'var(--muted)'; }
-    }
-  });
+    });
+  }
 }
 
 function addToWatchlist(ticker, andLoad = false) {

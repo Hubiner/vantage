@@ -13,6 +13,8 @@ from ta.momentum import RSIIndicator
 from ta.volatility import BollingerBands
 
 app = FastAPI(title="Vantage", version="2.0.0")
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=500)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # ── TTL Cache ──────────────────────────────────────────────────────────────
@@ -156,6 +158,25 @@ def get_quote(ticker: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"Ativo '{ticker}' não encontrado: {str(e)}")
+
+
+@app.get("/api/quotes")
+def get_quotes(tickers: str):
+    """Batch quote — tickers separated by comma. Max 20 tickers."""
+    ticker_list = [t.strip().upper() for t in tickers.split(",") if t.strip()][:20]
+
+    import concurrent.futures
+
+    def fetch(t: str):
+        try:
+            return get_quote(t)
+        except Exception:
+            return {"ticker": t, "error": True}
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
+        results = list(ex.map(fetch, ticker_list))
+
+    return {"quotes": results}
 
 
 @app.get("/api/history/{ticker}")
