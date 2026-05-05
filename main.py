@@ -76,6 +76,8 @@ def get_meta(ticker: str, stock: Any) -> dict:
             "pb_ratio": clean(info.get("priceToBook")),
             "revenue": clean(info.get("totalRevenue")),
             "avg_volume_10d": clean(info.get("averageVolume10days") or info.get("averageVolume")),
+            "analyst_recommendation": info.get("recommendationKey"),
+            "num_analyst_opinions": info.get("numberOfAnalystOpinions"),
         }
     except Exception:
         meta = {
@@ -89,6 +91,8 @@ def get_meta(ticker: str, stock: Any) -> dict:
             "pb_ratio": None,
             "revenue": None,
             "avg_volume_10d": None,
+            "analyst_recommendation": None,
+            "num_analyst_opinions": None,
         }
     cache_set(f"meta:{ticker}", meta)
     return meta
@@ -101,6 +105,10 @@ def root():
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
     return Response(status_code=204)
+
+@app.get("/favicon.svg", include_in_schema=False)
+def favicon_svg():
+    return FileResponse("static/favicon.svg", media_type="image/svg+xml")
 
 
 @app.get("/api/quote/{ticker}")
@@ -149,6 +157,8 @@ def get_quote(ticker: str):
             "avg_volume_10d": meta["avg_volume_10d"],
             "52w_high": clean(fi_get(fi, "year_high")),
             "52w_low": clean(fi_get(fi, "year_low")),
+            "analyst_recommendation": meta.get("analyst_recommendation"),
+            "num_analyst_opinions": meta.get("num_analyst_opinions"),
         }
         cache_set(f"quote:{ticker}", result)
         return result
@@ -303,6 +313,8 @@ async def get_market():
         "GC=F":     "Ouro",
         "CL=F":     "WTI",
         "EURUSD=X": "EUR/USD",
+        "DX-Y.NYB": "DXY",
+        "^TNX":     "T10Y",
     }
 
     async def fetch_one(sym: str, label: str) -> dict:
