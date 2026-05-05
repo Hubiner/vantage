@@ -87,6 +87,12 @@ header {
 .search-item .nm { color:var(--muted2); font-size:11px; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .search-item .ex { color:var(--muted); font-size:11px; white-space:nowrap; }
 .header-time { color:var(--muted); font-size:11px; margin-left:auto; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.market-status {
+  font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  padding:3px 8px; border-radius:20px; white-space:nowrap; flex-shrink:0;
+}
+.market-status.open  { background:var(--green-dim); color:var(--green); }
+.market-status.closed { background:rgba(125,133,144,.15); color:var(--muted); }
 
 /* ── Market Bar ─────────────────────────────────────────────────────────── */
 .market-bar {
@@ -293,6 +299,7 @@ main {
       <div class="search-results" id="searchResults"></div>
     </div>
     <span class="header-time" id="headerTime"></span>
+    <span id="marketStatus" class="market-status"></span>
   </header>
 
   <!-- Market Bar -->
@@ -439,6 +446,11 @@ async function loadMarketBar() {
         <span class="mi-chg ${cls}">${chgStr}</span>
       </div>`;
     }).join('');
+    const statusEl = document.getElementById('marketStatus');
+    if (statusEl) {
+      statusEl.textContent = data.market_open ? '● Mercado Aberto' : '● Mercado Fechado';
+      statusEl.className = 'market-status ' + (data.market_open ? 'open' : 'closed');
+    }
   } catch(e) {
     document.getElementById('marketBar').innerHTML = '<span class="mi-loading" style="color:var(--red)">⚠ mercado indisponível</span>';
   }

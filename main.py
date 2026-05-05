@@ -261,6 +261,14 @@ def get_indicators(ticker: str, period: str = "6mo"):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def is_us_market_open() -> bool:
+    from zoneinfo import ZoneInfo
+    from datetime import datetime, time as dtime
+    now = datetime.now(ZoneInfo("America/New_York"))
+    if now.weekday() >= 5:
+        return False
+    return dtime(9, 30) <= now.time() <= dtime(16, 0)
+
 @app.get("/api/market")
 async def get_market():
     cached = cache_get("market", 120)
@@ -268,11 +276,15 @@ async def get_market():
         return cached
 
     symbols = {
-        "^GSPC": "S&P 500",
-        "^IXIC": "NASDAQ",
-        "^DJI": "DOW",
-        "BTC-USD": "Bitcoin",
-        "^BVSP": "IBOV",
+        "^GSPC":    "S&P 500",
+        "^IXIC":    "NASDAQ",
+        "^DJI":     "DOW",
+        "^BVSP":    "IBOV",
+        "^VIX":     "VIX",
+        "BTC-USD":  "BTC",
+        "GC=F":     "Ouro",
+        "CL=F":     "WTI",
+        "EURUSD=X": "EUR/USD",
     }
 
     async def fetch_one(sym: str, label: str) -> dict:
@@ -286,7 +298,7 @@ async def get_market():
             return {"symbol": sym, "label": label, "price": None, "change_pct": None}
 
     indices = await asyncio.gather(*[fetch_one(s, l) for s, l in symbols.items()])
-    result = {"indices": list(indices)}
+    result = {"indices": list(indices), "market_open": is_us_market_open()}
     cache_set("market", result)
     return result
 
