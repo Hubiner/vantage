@@ -1,0 +1,457 @@
+# =============================================================================
+#  .gitignore PROFISSIONAL — Multi-stack
+#  Cobre: Python, Node.js, Java, C/C++, C#/.NET, Flutter/Dart
+#  SO: Windows, Linux
+#  Ferramentas: VS Code, IntelliJ/Android Studio, Claude Code, Docker
+# =============================================================================
+
+
+# =============================================================================
+# 🤖 IA / CLAUDE CODE
+# =============================================================================
+.claude/
+.aider*
+.continue/
+.cursor/
+*.ai-context
+.superpowers
+*.superpowers
+.playwright-mcp
+*.playwright-mcp
+playwright-report
+*playwright-report
+
+# =============================================================================
+# 🖥️ SISTEMA OPERACIONAL
+# =============================================================================
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Arquivos temporários gerais
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*.orig
+*.log
+*.pid
+
+
+# =============================================================================
+# 📝 EDITORES E IDEs
+# =============================================================================
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+*.code-workspace
+
+# IntelliJ / Android Studio / JetBrains
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.idea_modules/
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# NetBeans
+nbproject/
+nbbuild/
+nbdist/
+nbactions.xml
+nb-configuration.xml
+
+# Vim / Emacs
+*.vim
+.*.swp
+\#*\#
+.\#*
+
+
+# =============================================================================
+# 🐍 PYTHON
+# =============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# Ambientes virtuais
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.virtualenv/
+.pyenv/
+.tox/
+.nox/
+
+# Distribuição / packaging
+build/
+dist/
+*.egg
+*.egg-info/
+.eggs/
+wheels/
+*.whl
+MANIFEST
+
+# Testes e cobertura
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+.hypothesis/
+nosetests.xml
+test-results/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# mypy / pyright / ruff
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyright/
+.ruff_cache/
+
+# Poetry / PDM / Pipenv
+poetry.lock
+Pipfile.lock
+pdm.lock
+.pdm.toml
+
+
+# =============================================================================
+# 🟨 JAVASCRIPT / NODE.JS
+# =============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+.nuxt/
+.output/
+.svelte-kit/
+out/
+
+# Cache
+.cache/
+.parcel-cache/
+.turbo/
+.eslintcache
+.stylelintcache
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+
+# Pacotes locais
+*.tgz
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Cobertura de testes
+coverage/
+*.lcov
+.nyc_output/
+
+
+# =============================================================================
+# ☕ JAVA
+# =============================================================================
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.sar
+*.tar.gz
+*.zip
+
+# Build
+target/
+build/
+out/
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+
+# Logs
+*.log
+hs_err_pid*
+replay_pid*
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+
+# =============================================================================
+# ⚙️ C / C++
+# =============================================================================
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Build
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.make
+*.d
+
+# Debug
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+
+# =============================================================================
+# 🔷 C# / .NET
+# =============================================================================
+bin/
+obj/
+[Ll]og/
+[Ll]ogs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nupkg
+*.snupkg
+*.nuget.props
+*.nuget.targets
+.nuget/
+packages/
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+_ReSharper*/
+*.DotSettings.user
+.localhistory/
+.vshistory/
+*.vsidx
+*.vs/
+
+
+# =============================================================================
+# 🦋 FLUTTER / DART
+# =============================================================================
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+flutter_*.png
+linked_*.ds
+unlinked.ds
+unlinked_spec.ds
+
+# Android
+**/android/local.properties
+**/android/.gradle/
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/gradle/wrapper/gradle-wrapper.jar
+
+# iOS / macOS
+**/ios/.symlinks/
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/engine
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+Podfile.lock
+
+# Web
+lib/generated_plugin_registrant.dart
+
+
+# =============================================================================
+# 🐳 DOCKER
+# =============================================================================
+.dockerignore
+docker-compose.override.yml
+.docker/
+*.dockerenv
+
+# Volumes locais
+docker-volumes/
+data/
+
+
+# =============================================================================
+# 🔐 SEGURANÇA — NUNCA COMMITAR
+# =============================================================================
+.env
+.env.*
+!.env.example
+!.env.template
+
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*.csr
+
+secrets/
+secret/
+credentials/
+*.credentials
+*_credentials*
+*_secret*
+*_secrets*
+
+# AWS
+.aws/
+aws-credentials
+credentials
+
+# Google Cloud
+gcloud/
+application_default_credentials.json
+service-account*.json
+
+# SSH
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+known_hosts
+
+
+# =============================================================================
+# 📊 BANCO DE DADOS
+# =============================================================================
+*.sqlite
+*.sqlite3
+*.db
+*.db3
+*.sql.gz
+dump.sql
+*.dump
+migrations_backup/
+
+
+# =============================================================================
+# 📦 ARQUIVOS COMPRIMIDOS
+# =============================================================================
+*.7z
+*.gz
+*.bz2
+*.xz
+*.zip
+*.rar
+*.tar
+*.tgz
+
+
+# =============================================================================
+# 📁 MISC
+# =============================================================================
+.DS_Store
+Thumbs.db
+*.pid
+*.seed
+*.pid.lock
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+.vscode-test/
