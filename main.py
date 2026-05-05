@@ -7,7 +7,6 @@ import yfinance as yf
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, Response
-from fastapi.staticfiles import StaticFiles
 from ta.trend import SMAIndicator, EMAIndicator, MACD
 from ta.momentum import RSIIndicator
 from ta.volatility import BollingerBands
@@ -15,7 +14,6 @@ from ta.volatility import BollingerBands
 app = FastAPI(title="Vantage", version="2.0.0")
 from fastapi.middleware.gzip import GZipMiddleware
 app.add_middleware(GZipMiddleware, minimum_size=500)
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # ── TTL Cache ──────────────────────────────────────────────────────────────
 _cache: dict[str, tuple[Any, float]] = {}

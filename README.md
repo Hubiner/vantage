@@ -73,6 +73,25 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 
 ---
 
+## Deploy na Vercel
+
+**Requisitos:** conta na [Vercel](https://vercel.com) + Vercel CLI (`npm i -g vercel`)
+
+```bash
+# Na raiz do projeto
+vercel
+
+# Seguir o wizard: framework → Other, build command → vazio, output → vazio
+```
+
+**Variáveis de ambiente:** nenhuma necessária — o app usa apenas Yahoo Finance (público).
+
+**Limitações no plano gratuito:**
+- Timeout de função: 10s padrão (considere Pro se necessário)
+- Cold start: ~2-3s na primeira request (yfinance + pandas são pesados)
+
+---
+
 ## Estrutura do projeto
 
 ```
