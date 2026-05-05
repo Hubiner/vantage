@@ -453,6 +453,8 @@ async function loadMarketBar() {
     }
   } catch(e) {
     document.getElementById('marketBar').innerHTML = '<span class="mi-loading" style="color:var(--red)">⚠ mercado indisponível</span>';
+    const statusEl = document.getElementById('marketStatus');
+    if (statusEl) { statusEl.textContent = ''; statusEl.className = 'market-status'; }
   }
 }
 loadMarketBar();
