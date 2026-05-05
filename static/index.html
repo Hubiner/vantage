@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Vantage</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+/* ── Variables ──────────────────────────────────────────────────────────── */
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2128;
+  --border: #30363d;
+  --border-subtle: #21262d;
+  --text: #e6edf3;
+  --muted: #7d8590;
+  --muted2: #8b949e;
+  --accent: #58a6ff;
+  --accent-dim: rgba(88,166,255,0.12);
+  --green: #3fb950;
+  --green-dim: rgba(63,185,80,0.15);
+  --red: #f85149;
+  --red-dim: rgba(248,81,73,0.15);
+  --yellow: #d29922;
+  --purple: #bc8cff;
+}
+
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; font-size:14px; line-height:1.5; overflow:hidden; }
+button { font-family:inherit; cursor:pointer; }
+input { font-family:inherit; }
+
+/* ── App grid ───────────────────────────────────────────────────────────── */
+.app {
+  display:grid;
+  grid-template-columns:272px 1fr;
+  grid-template-rows:52px 34px 1fr;
+  height:100vh;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+header {
+  grid-column:1/-1;
+  background:var(--surface);
+  border-bottom:1px solid var(--border-subtle);
+  display:flex;
+  align-items:center;
+  padding:0 18px;
+  gap:14px;
+  z-index:20;
+}
+.logo { font-size:16px; font-weight:700; color:var(--accent); white-space:nowrap; letter-spacing:-.3px; }
+.search-wrap { position:relative; flex:1; max-width:440px; }
+.search-wrap input {
+  width:100%;
+  background:var(--bg);
+  border:1px solid var(--border-subtle);
+  color:var(--text);
+  padding:7px 12px 7px 34px;
+  border-radius:8px;
+  font-size:13px;
+  outline:none;
+  transition:border-color .15s;
+}
+.search-wrap input:focus { border-color:var(--accent); }
+.search-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:14px; pointer-events:none; }
+.search-results {
+  position:absolute; top:calc(100% + 6px); left:0; right:0;
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  z-index:100; display:none; box-shadow:0 8px 24px rgba(0,0,0,.5); overflow:hidden;
+}
+.search-results.open { display:block; }
+.search-item { padding:9px 14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.search-item:hover { background:var(--bg); }
+.search-item .si-left { display:flex; flex-direction:column; gap:2px; }
+.search-item .sym { font-weight:700; font-size:13px; color:var(--accent); }
+.search-item .nm { color:var(--muted2); font-size:11px; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.search-item .ex { color:var(--muted); font-size:11px; white-space:nowrap; }
+.header-time { color:var(--muted); font-size:11px; margin-left:auto; white-space:nowrap; font-variant-numeric:tabular-nums; }
+
+/* ── Market Bar ─────────────────────────────────────────────────────────── */
+.market-bar {
+  grid-column:1/-1;
+  background:#0a0d12;
+  border-bottom:1px solid var(--border-subtle);
+  display:flex;
+  align-items:center;
+  padding:0 18px;
+  gap:0;
+  overflow:hidden;
+}
+.mi {
+  display:flex; align-items:center; gap:7px;
+  padding:0 16px 0 0; margin-right:16px;
+  border-right:1px solid var(--border-subtle);
+  white-space:nowrap;
+}
+.mi:last-child { border-right:none; }
+.mi-label { font-size:10px; font-weight:700; color:var(--muted); letter-spacing:.04em; text-transform:uppercase; }
+.mi-price { font-size:12px; font-weight:600; }
+.mi-chg { font-size:11px; }
+.mi-loading { color:var(--muted); font-size:11px; }
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+aside {
+  background:var(--surface);
+  border-right:1px solid var(--border-subtle);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.sidebar-tabs {
+  display:flex;
+  border-bottom:1px solid var(--border-subtle);
+  flex-shrink:0;
+}
+.sidebar-tab {
+  flex:1; background:none; border:none; color:var(--muted2);
+  padding:10px 0; font-size:12px; font-weight:600; letter-spacing:.02em;
+  border-bottom:2px solid transparent; transition:color .15s, border-color .15s;
+}
+.sidebar-tab:hover { color:var(--text); }
+.sidebar-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+.sidebar-body { flex:1; overflow-y:auto; padding:12px 10px; }
+
+/* ── Watchlist ───────────────────────────────────────────────────────────── */
+.watch-item {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:8px 8px; border-radius:8px; cursor:pointer; gap:8px;
+  transition:background .1s;
+  position:relative;
+}
+.watch-item:hover { background:var(--bg); }
+.watch-item.active { background:var(--bg); border-left:3px solid var(--accent); padding-left:6px; }
+.watch-sym { font-weight:700; font-size:13px; }
+.watch-name { font-size:10px; color:var(--muted); margin-top:1px; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.watch-right { text-align:right; flex-shrink:0; }
+.watch-price-val { font-size:13px; font-weight:600; }
+.watch-chg { font-size:10px; margin-top:1px; }
+.watch-remove {
+  background:none; border:none; color:var(--muted); font-size:16px; line-height:1;
+  padding:0 2px; display:none; position:absolute; right:4px; top:50%; transform:translateY(-50%);
+  transition:color .1s;
+}
+.watch-remove:hover { color:var(--red); }
+.watch-item:hover .watch-remove { display:block; }
+.watch-empty { color:var(--muted); font-size:12px; text-align:center; padding:24px 12px; line-height:1.7; }
+
+/* ── Browse tab ─────────────────────────────────────────────────────────── */
+.category-pills { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+.cat-pill {
+  background:none; border:1px solid var(--border); color:var(--muted2);
+  padding:4px 10px; border-radius:20px; font-size:11px; font-weight:600;
+  transition:all .15s;
+}
+.cat-pill:hover { border-color:var(--accent); color:var(--accent); }
+.cat-pill.active { background:var(--accent-dim); border-color:var(--accent); color:var(--accent); }
+.browse-search { margin-bottom:10px; }
+.browse-search input {
+  width:100%; background:var(--bg); border:1px solid var(--border-subtle); color:var(--text);
+  padding:6px 10px; border-radius:7px; font-size:12px; outline:none;
+}
+.browse-search input:focus { border-color:var(--accent); }
+.browse-item {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:7px 8px; border-radius:7px; cursor:pointer; transition:background .1s;
+}
+.browse-item:hover { background:var(--bg); }
+.browse-ticker { font-size:12px; font-weight:700; color:var(--text); }
+.browse-name { font-size:10px; color:var(--muted); margin-top:1px; }
+.browse-add { font-size:16px; color:var(--muted); transition:color .1s; }
+.browse-item:hover .browse-add { color:var(--accent); }
+
+/* ── Main area ───────────────────────────────────────────────────────────── */
+main {
+  overflow-y:auto;
+  padding:18px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  background:var(--bg);
+}
+
+/* ── Empty / Error states ────────────────────────────────────────────────── */
+.state-box {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:60px 20px; text-align:center; gap:10px; color:var(--muted);
+}
+.state-icon { font-size:40px; margin-bottom:4px; }
+.state-title { font-size:16px; font-weight:600; color:var(--text); }
+.state-sub { font-size:13px; max-width:320px; line-height:1.6; }
+.retry-btn {
+  margin-top:6px; background:var(--accent); border:none; color:#fff;
+  padding:8px 18px; border-radius:8px; font-size:13px; font-weight:600;
+  transition:opacity .15s;
+}
+.retry-btn:hover { opacity:.85; }
+
+/* ── Skeleton loaders ───────────────────────────────────────────────────── */
+@keyframes sk-pulse { 0%,100%{opacity:.35} 50%{opacity:.7} }
+.sk { background:var(--border-subtle); border-radius:5px; animation:sk-pulse 1.6s ease-in-out infinite; }
+
+/* ── Quote card ─────────────────────────────────────────────────────────── */
+.quote-card {
+  background:var(--surface);
+  border:1px solid var(--border-subtle);
+  border-radius:12px;
+  padding:18px 22px;
+}
+.quote-top {
+  display:flex; justify-content:space-between; align-items:flex-start;
+  flex-wrap:wrap; gap:12px; margin-bottom:16px;
+}
+.quote-meta { display:flex; flex-direction:column; gap:3px; }
+.quote-id { font-size:11px; color:var(--muted); font-weight:600; letter-spacing:.04em; }
+.quote-name { font-size:18px; font-weight:700; line-height:1.3; }
+.quote-sector { font-size:11px; color:var(--muted); }
+.quote-price-block { text-align:right; }
+.quote-price { font-size:28px; font-weight:700; line-height:1.1; }
+.quote-change { font-size:14px; margin-top:4px; }
+.quote-ts { font-size:10px; color:var(--muted); margin-top:5px; }
+.quote-ts .refresh-btn {
+  background:none; border:1px solid var(--border); border-radius:20px;
+  color:var(--muted); font-size:10px; padding:1px 7px; margin-left:4px;
+  transition:all .15s;
+}
+.quote-ts .refresh-btn:hover { color:var(--accent); border-color:var(--accent); }
+
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px; }
+.stat { background:var(--bg); border-radius:8px; padding:10px 12px; }
+.stat-label { font-size:10px; color:var(--muted); margin-bottom:4px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
+.stat-value { font-size:13px; font-weight:700; }
+
+/* ── Period bar ─────────────────────────────────────────────────────────── */
+.period-bar { display:flex; gap:4px; }
+.period-btn {
+  background:none; border:1px solid var(--border); color:var(--muted);
+  padding:4px 11px; border-radius:6px; font-size:11px; font-weight:700;
+  transition:all .15s;
+}
+.period-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+.period-btn:hover:not(.active) { border-color:var(--accent); color:var(--accent); }
+
+/* ── Chart panels ───────────────────────────────────────────────────────── */
+.chart-panel { background:var(--surface); border:1px solid var(--border-subtle); border-radius:12px; padding:14px 18px; }
+.panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.panel-title { font-size:13px; font-weight:600; }
+.chart-wrap canvas { max-height:260px; }
+.chart-wrap.sm canvas { max-height:150px; }
+.indicators-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+@media(max-width:960px) { .indicators-grid { grid-template-columns:1fr; } }
+
+/* ── Color utilities ────────────────────────────────────────────────────── */
+.pos { color:var(--green); }
+.neg { color:var(--red); }
+.neu { color:var(--muted2); }
+.pill { display:inline-block; padding:2px 7px; border-radius:20px; font-size:10px; font-weight:700; }
+.pill.green { background:var(--green-dim); color:var(--green); }
+.pill.red { background:var(--red-dim); color:var(--red); }
+.pill.yellow { background:rgba(210,153,34,.15); color:var(--yellow); }
+
+/* ── Sidebar skeleton ───────────────────────────────────────────────────── */
+.watch-skel { display:flex; justify-content:space-between; padding:8px 8px; gap:8px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <span class="logo">
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0">
+    <path d="M2 12L6 7L9 10L14 4" stroke="url(#lg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <defs><linearGradient id="lg" x1="2" y1="12" x2="14" y2="4" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#58a6ff"/><stop offset="1" stop-color="#bc8cff"/>
+    </linearGradient></defs>
+  </svg>
+  Vantage
+</span>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input id="searchInput" type="text" placeholder="Buscar ativo: AAPL, PETR4.SA, BTC-USD…" autocomplete="off"/>
+      <div class="search-results" id="searchResults"></div>
+    </div>
+    <span class="header-time" id="headerTime"></span>
+  </header>
+
+  <!-- Market Bar -->
+  <div class="market-bar" id="marketBar">
+    <span class="mi-loading">⚡ carregando mercado…</span>
+  </div>
+
+  <!-- Sidebar -->
+  <aside>
+    <div class="sidebar-tabs">
+      <button class="sidebar-tab active" id="tabBtnWatchlist" onclick="switchTab('watchlist')">⭐ Watchlist</button>
+      <button class="sidebar-tab" id="tabBtnBrowse" onclick="switchTab('browse')">🔎 Browse</button>
+    </div>
+
+    <!-- Watchlist body -->
+    <div class="sidebar-body" id="panelWatchlist">
+      <div id="watchlist"></div>
+      <div id="watchEmpty" class="watch-empty" style="display:none">
+        Busque um ativo acima<br>ou explore em <strong>Browse</strong>
+      </div>
+    </div>
+
+    <!-- Browse body -->
+    <div class="sidebar-body" id="panelBrowse" style="display:none">
+      <div class="category-pills" id="categoryPills"></div>
+      <div class="browse-search">
+        <input id="browseInput" type="text" placeholder="Filtrar…" oninput="filterBrowse()" autocomplete="off"/>
+      </div>
+      <div id="browseList"></div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main id="main">
+    <div class="state-box">
+      <div class="state-icon">📈</div>
+      <div class="state-title">Vantage</div>
+      <div class="state-sub">Selecione um ativo na watchlist ou explore em <strong>Browse</strong> para começar.</div>
+    </div>
+  </main>
+
+</div>
+<script>
+// ── Asset catalog ──────────────────────────────────────────────────────────
+const CATALOG = {
+  'EUA': [
+    {ticker:'AAPL',  name:'Apple Inc.'},
+    {ticker:'MSFT',  name:'Microsoft'},
+    {ticker:'GOOGL', name:'Alphabet (Google)'},
+    {ticker:'AMZN',  name:'Amazon'},
+    {ticker:'NVDA',  name:'NVIDIA'},
+    {ticker:'TSLA',  name:'Tesla'},
+    {ticker:'META',  name:'Meta Platforms'},
+    {ticker:'BRK-B', name:'Berkshire Hathaway'},
+    {ticker:'JPM',   name:'JPMorgan Chase'},
+    {ticker:'V',     name:'Visa'},
+  ],
+  'Brasil': [
+    {ticker:'PETR4.SA', name:'Petrobras PN'},
+    {ticker:'VALE3.SA', name:'Vale ON'},
+    {ticker:'ITUB4.SA', name:'Itaú Unibanco PN'},
+    {ticker:'BBDC4.SA', name:'Bradesco PN'},
+    {ticker:'BBAS3.SA', name:'Banco do Brasil ON'},
+    {ticker:'ABEV3.SA', name:'Ambev ON'},
+    {ticker:'WEGE3.SA', name:'WEG ON'},
+    {ticker:'RENT3.SA', name:'Localiza ON'},
+    {ticker:'MGLU3.SA', name:'Magazine Luiza ON'},
+    {ticker:'BPAC11.SA',name:'BTG Pactual'},
+  ],
+  'Cripto': [
+    {ticker:'BTC-USD', name:'Bitcoin'},
+    {ticker:'ETH-USD', name:'Ethereum'},
+    {ticker:'SOL-USD', name:'Solana'},
+    {ticker:'BNB-USD', name:'BNB'},
+    {ticker:'XRP-USD', name:'XRP'},
+    {ticker:'ADA-USD', name:'Cardano'},
+    {ticker:'DOGE-USD',name:'Dogecoin'},
+  ],
+  'Índices': [
+    {ticker:'^GSPC', name:'S&P 500'},
+    {ticker:'^IXIC', name:'NASDAQ Composite'},
+    {ticker:'^DJI',  name:'Dow Jones'},
+    {ticker:'^BVSP', name:'Ibovespa'},
+    {ticker:'^FTSE', name:'FTSE 100'},
+    {ticker:'^N225', name:'Nikkei 225'},
+  ],
+};
+
+// ── State ──────────────────────────────────────────────────────────────────
+const state = {
+  watchlist: JSON.parse(localStorage.getItem('sb_watchlist') || '["AAPL","MSFT","PETR4.SA","BTC-USD"]'),
+  activeTicker: null,
+  activePeriod: '3mo',
+  activeTab: 'watchlist',
+  activeCat: 'EUA',
+  charts: {},
+  refreshTimer: null,
+};
+
+// ── Utils ──────────────────────────────────────────────────────────────────
+const fmt = {
+  price(v, digits=2) { return v == null ? '—' : Number(v).toLocaleString('pt-BR', {minimumFractionDigits:digits, maximumFractionDigits:digits}); },
+  pct(v) { return v == null ? '—' : (v > 0 ? '+' : '') + Number(v).toFixed(2) + '%'; },
+  large(v) {
+    if (v == null) return '—';
+    if (v >= 1e12) return (v/1e12).toFixed(2)+'T';
+    if (v >= 1e9)  return (v/1e9).toFixed(2)+'B';
+    if (v >= 1e6)  return (v/1e6).toFixed(2)+'M';
+    return Number(v).toLocaleString('pt-BR');
+  },
+};
+const cc = v => v == null ? 'neu' : v > 0 ? 'pos' : v < 0 ? 'neg' : 'neu';
+
+async function api(path) {
+  const r = await fetch('/api' + path);
+  if (!r.ok) { const j = await r.json().catch(()=>({})); throw new Error(j.detail || `HTTP ${r.status}`); }
+  return r.json();
+}
+function destroyChart(key) {
+  if (state.charts[key]) { state.charts[key].destroy(); delete state.charts[key]; }
+}
+function saveWatchlist() { localStorage.setItem('sb_watchlist', JSON.stringify(state.watchlist)); }
+
+// ── Clock ──────────────────────────────────────────────────────────────────
+function updateClock() {
+  const n = new Date();
+  document.getElementById('headerTime').textContent =
+    n.toLocaleDateString('pt-BR') + ' · ' + n.toLocaleTimeString('pt-BR');
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ── Market bar ─────────────────────────────────────────────────────────────
+async function loadMarketBar() {
+  try {
+    const data = await api('/market');
+    const bar = document.getElementById('marketBar');
+    bar.innerHTML = data.indices.map(i => {
+      const cls = cc(i.change_pct);
+      const chgStr = i.change_pct != null ? (i.change_pct > 0?'+':'') + i.change_pct.toFixed(2)+'%' : '—';
+      const priceStr = i.price != null ? Number(i.price).toLocaleString('pt-BR',{maximumFractionDigits:2}) : '—';
+      return `<div class="mi">
+        <span class="mi-label">${i.label}</span>
+        <span class="mi-price">${priceStr}</span>
+        <span class="mi-chg ${cls}">${chgStr}</span>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('marketBar').innerHTML = '<span class="mi-loading" style="color:var(--red)">⚠ mercado indisponível</span>';
+  }
+}
+loadMarketBar();
+setInterval(loadMarketBar, 5 * 60 * 1000);
+
+// ── Search ─────────────────────────────────────────────────────────────────
+let _searchTimer;
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+
+searchInput.addEventListener('input', () => {
+  clearTimeout(_searchTimer);
+  const q = searchInput.value.trim();
+  if (q.length < 1) { searchResults.classList.remove('open'); return; }
+  _searchTimer = setTimeout(() => doSearch(q), 320);
+});
+searchInput.addEventListener('blur', () => setTimeout(() => searchResults.classList.remove('open'), 180));
+
+async function doSearch(q) {
+  try {
+    const data = await api('/search/' + encodeURIComponent(q));
+    if (!data.results.length) {
+      searchResults.innerHTML = `<div class="search-item"><span class="nm" style="color:var(--muted)">Nenhum resultado para "${q}"</span></div>`;
+      searchResults.classList.add('open'); return;
+    }
+    searchResults.innerHTML = data.results.map(r => `
+      <div class="search-item" onclick="pickTicker('${r.ticker}')">
+        <div class="si-left">
+          <span class="sym">${r.ticker}</span>
+          <span class="nm">${r.name}</span>
+        </div>
+        <span class="ex">${r.exchange}</span>
+      </div>`).join('');
+    searchResults.classList.add('open');
+  } catch { searchResults.classList.remove('open'); }
+}
+
+function pickTicker(ticker) {
+  searchInput.value = '';
+  searchResults.classList.remove('open');
+  addToWatchlist(ticker, true);
+}
+
+// ── Sidebar tabs ───────────────────────────────────────────────────────────
+function switchTab(tab) {
+  state.activeTab = tab;
+  document.getElementById('tabBtnWatchlist').classList.toggle('active', tab === 'watchlist');
+  document.getElementById('tabBtnBrowse').classList.toggle('active', tab === 'browse');
+  document.getElementById('panelWatchlist').style.display = tab === 'watchlist' ? '' : 'none';
+  document.getElementById('panelBrowse').style.display = tab === 'browse' ? '' : 'none';
+  if (tab === 'browse') renderBrowseUI();
+}
+
+// ── Browse ─────────────────────────────────────────────────────────────────
+function renderBrowseUI() {
+  const pills = document.getElementById('categoryPills');
+  if (!pills.children.length) {
+    pills.innerHTML = Object.keys(CATALOG).map(cat =>
+      `<button class="cat-pill ${cat === state.activeCat ? 'active' : ''}" onclick="selectCat('${cat}')">${cat}</button>`
+    ).join('');
+  }
+  renderBrowseList();
+}
+
+function selectCat(cat) {
+  state.activeCat = cat;
+  document.querySelectorAll('.cat-pill').forEach(b => b.classList.toggle('active', b.textContent === cat));
+  document.getElementById('browseInput').value = '';
+  renderBrowseList();
+}
+
+function filterBrowse() { renderBrowseList(); }
+
+function renderBrowseList() {
+  const q = (document.getElementById('browseInput')?.value || '').toLowerCase();
+  const items = CATALOG[state.activeCat] || [];
+  const filtered = q ? items.filter(a => a.ticker.toLowerCase().includes(q) || a.name.toLowerCase().includes(q)) : items;
+  document.getElementById('browseList').innerHTML = filtered.length
+    ? filtered.map(a => `
+        <div class="browse-item" onclick="addToWatchlist('${a.ticker}', true)">
+          <div><div class="browse-ticker">${a.ticker}</div><div class="browse-name">${a.name}</div></div>
+          <span class="browse-add">＋</span>
+        </div>`).join('')
+    : `<div style="color:var(--muted);font-size:12px;padding:12px 8px">Nenhum ativo encontrado.</div>`;
+}
+
+// ── Watchlist ──────────────────────────────────────────────────────────────
+function watchlistSkeleton() {
+  return Array(3).fill(0).map(() => `
+    <div class="watch-skel">
+      <div>
+        <div class="sk" style="width:48px;height:13px;margin-bottom:5px"></div>
+        <div class="sk" style="width:80px;height:10px"></div>
+      </div>
+      <div style="text-align:right">
+        <div class="sk" style="width:38px;height:13px;margin-bottom:5px;margin-left:auto"></div>
+        <div class="sk" style="width:30px;height:10px;margin-left:auto"></div>
+      </div>
+    </div>`).join('');
+}
+
+async function renderWatchlist() {
+  const el = document.getElementById('watchlist');
+  const empty = document.getElementById('watchEmpty');
+  if (!state.watchlist.length) {
+    el.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  el.innerHTML = watchlistSkeleton();
+
+  // Render placeholders then fill with real data
+  el.innerHTML = state.watchlist.map(t => `
+    <div class="watch-item ${state.activeTicker === t ? 'active' : ''}" id="wi-${t.replace(/[^a-z0-9]/gi,'_')}" onclick="loadTicker('${t}')">
+      <div style="min-width:0">
+        <div class="watch-sym">${t}</div>
+        <div class="watch-name" id="wn-${t.replace(/[^a-z0-9]/gi,'_')}">—</div>
+      </div>
+      <div class="watch-right">
+        <div class="watch-price-val" id="wp-${t.replace(/[^a-z0-9]/gi,'_')}">
+          <div class="sk" style="width:38px;height:12px;display:inline-block"></div>
+        </div>
+        <div class="watch-chg" id="wc-${t.replace(/[^a-z0-9]/gi,'_')}"></div>
+      </div>
+      <button class="watch-remove" onclick="event.stopPropagation();removeFromWatchlist('${t}')" title="Remover">×</button>
+    </div>`).join('');
+
+  state.watchlist.forEach(async t => {
+    const id = t.replace(/[^a-z0-9]/gi,'_');
+    try {
+      const q = await api('/quote/' + t);
+      const pEl = document.getElementById('wp-' + id);
+      const cEl = document.getElementById('wc-' + id);
+      const nEl = document.getElementById('wn-' + id);
+      if (pEl) pEl.textContent = fmt.price(q.price);
+      if (cEl) { cEl.className = 'watch-chg ' + cc(q.change_pct); cEl.textContent = fmt.pct(q.change_pct); }
+      if (nEl) nEl.textContent = q.name;
+    } catch {
+      const pEl = document.getElementById('wp-' + id);
+      if (pEl) { pEl.textContent = '—'; pEl.style.color = 'var(--muted)'; }
+    }
+  });
+}
+
+function addToWatchlist(ticker, andLoad = false) {
+  ticker = ticker.toUpperCase();
+  if (!state.watchlist.includes(ticker)) {
+    state.watchlist.push(ticker);
+    saveWatchlist();
+  }
+  renderWatchlist();
+  if (andLoad) loadTicker(ticker);
+}
+
+function removeFromWatchlist(ticker) {
+  state.watchlist = state.watchlist.filter(t => t !== ticker);
+  saveWatchlist();
+  if (state.activeTicker === ticker) {
+    clearInterval(state.refreshTimer);
+    state.activeTicker = null;
+    document.getElementById('main').innerHTML = `
+      <div class="state-box">
+        <div class="state-icon">👈</div>
+        <div class="state-title">Ativo removido</div>
+        <div class="state-sub">Selecione outro ativo na watchlist.</div>
+      </div>`;
+  }
+  renderWatchlist();
+}
+
+// ── Load ticker ────────────────────────────────────────────────────────────
+async function loadTicker(ticker) {
+  state.activeTicker = ticker;
+  clearInterval(state.refreshTimer);
+
+  document.querySelectorAll('.watch-item').forEach(el => el.classList.remove('active'));
+  const id = ticker.replace(/[^a-z0-9]/gi,'_');
+  const wi = document.getElementById('wi-' + id);
+  if (wi) wi.classList.add('active');
+
+  showLoadingSkeleton();
+
+  try {
+    const [quote, history, indicators] = await Promise.all([
+      api('/quote/' + ticker),
+      api('/history/' + ticker + '?period=' + state.activePeriod),
+      api('/indicators/' + ticker + '?period=6mo'),
+    ]);
+    renderDashboard(quote, history, indicators);
+
+    // Auto-refresh quote every 60s
+    state.refreshTimer = setInterval(async () => {
+      if (state.activeTicker !== ticker) return;
+      try {
+        const q = await api('/quote/' + ticker);
+        patchQuoteCard(q);
+        const pEl = document.getElementById('wp-' + id);
+        const cEl = document.getElementById('wc-' + id);
+        if (pEl) pEl.textContent = fmt.price(q.price);
+        if (cEl) { cEl.className = 'watch-chg ' + cc(q.change_pct); cEl.textContent = fmt.pct(q.change_pct); }
+      } catch {}
+    }, 60000);
+  } catch(e) {
+    showError(e.message, ticker);
+  }
+}
+
+// ── Loading skeleton ───────────────────────────────────────────────────────
+function showLoadingSkeleton() {
+  const statSk = Array(5).fill(0).map(()=>`
+    <div class="stat">
+      <div class="sk" style="width:60%;height:10px;margin-bottom:7px"></div>
+      <div class="sk" style="width:75%;height:13px"></div>
+    </div>`).join('');
+
+  document.getElementById('main').innerHTML = `
+    <div class="quote-card">
+      <div class="quote-top">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="sk" style="width:120px;height:11px"></div>
+          <div class="sk" style="width:200px;height:20px"></div>
+          <div class="sk" style="width:90px;height:10px"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+          <div class="sk" style="width:100px;height:28px"></div>
+          <div class="sk" style="width:80px;height:14px"></div>
+        </div>
+      </div>
+      <div class="stats-grid">${statSk}</div>
+    </div>
+    <div class="chart-panel">
+      <div class="panel-header">
+        <div class="sk" style="width:160px;height:14px"></div>
+        <div class="sk" style="width:140px;height:26px;border-radius:6px"></div>
+      </div>
+      <div class="sk" style="width:100%;height:210px;border-radius:8px"></div>
+    </div>
+    <div class="indicators-grid">
+      <div class="chart-panel">
+        <div class="sk" style="width:80px;height:13px;margin-bottom:14px"></div>
+        <div class="sk" style="width:100%;height:130px;border-radius:8px"></div>
+      </div>
+      <div class="chart-panel">
+        <div class="sk" style="width:120px;height:13px;margin-bottom:14px"></div>
+        <div class="sk" style="width:100%;height:130px;border-radius:8px"></div>
+      </div>
+    </div>
+    <div class="chart-panel">
+      <div class="sk" style="width:220px;height:13px;margin-bottom:14px"></div>
+      <div class="sk" style="width:100%;height:210px;border-radius:8px"></div>
+    </div>`;
+}
+
+// ── Error state ────────────────────────────────────────────────────────────
+function showError(msg, ticker) {
+  document.getElementById('main').innerHTML = `
+    <div class="state-box">
+      <div class="state-icon">⚠️</div>
+      <div class="state-title">Não foi possível carregar</div>
+      <div class="state-sub" style="color:var(--red)">${msg}</div>
+      <button class="retry-btn" onclick="loadTicker('${ticker}')">↻ Tentar novamente</button>
+    </div>`;
+}
+
+// ── Dashboard render ───────────────────────────────────────────────────────
+function renderDashboard(quote, history, indicators) {
+  const pcc = cc(quote.change);
+  const lastRSI = indicators.data.filter(d=>d.rsi!=null).slice(-1)[0]?.rsi;
+  const rsiPill = lastRSI == null ? '' :
+    lastRSI >= 70 ? '<span class="pill red">Sobrecomprado</span>' :
+    lastRSI <= 30 ? '<span class="pill green">Sobrevendido</span>' :
+    '<span class="pill yellow">Neutro</span>';
+
+  const now = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+
+  document.getElementById('main').innerHTML = `
+    <!-- Quote Card -->
+    <div class="quote-card">
+      <div class="quote-top">
+        <div class="quote-meta">
+          <div class="quote-id">${quote.ticker} · ${quote.exchange} · ${quote.currency}</div>
+          <div class="quote-name">${quote.name}</div>
+          ${quote.sector ? `<div class="quote-sector">${quote.sector}</div>` : ''}
+        </div>
+        <div class="quote-price-block">
+          <div id="live-price" class="quote-price ${pcc}">${fmt.price(quote.price)}</div>
+          <div id="live-change" class="quote-change ${pcc}">
+            ${fmt.pct(quote.change_pct)}
+            ${quote.change != null ? `(${quote.change > 0 ? '+' : ''}${fmt.price(quote.change)})` : ''}
+          </div>
+          <div class="quote-ts">
+            Atualizado ${now}
+            <button class="refresh-btn" onclick="forceRefresh()">↻</button>
+          </div>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><div class="stat-label">Abertura</div><div class="stat-value">${fmt.price(quote.open)}</div></div>
+        <div class="stat"><div class="stat-label">Máxima</div><div class="stat-value pos">${fmt.price(quote.high)}</div></div>
+        <div class="stat"><div class="stat-label">Mínima</div><div class="stat-value neg">${fmt.price(quote.low)}</div></div>
+        <div class="stat"><div class="stat-label">Volume</div><div id="live-vol" class="stat-value">${fmt.large(quote.volume)}</div></div>
+        <div class="stat"><div class="stat-label">Market Cap</div><div class="stat-value">${fmt.large(quote.market_cap)}</div></div>
+        <div class="stat"><div class="stat-label">P/L</div><div class="stat-value">${quote.pe_ratio ? Number(quote.pe_ratio).toFixed(2) : '—'}</div></div>
+        <div class="stat"><div class="stat-label">Div. Yield</div><div class="stat-value">${quote.dividend_yield ? (quote.dividend_yield*100).toFixed(2)+'%' : '—'}</div></div>
+        <div class="stat"><div class="stat-label">Máx 52s</div><div class="stat-value">${fmt.price(quote['52w_high'])}</div></div>
+        <div class="stat"><div class="stat-label">Mín 52s</div><div class="stat-value">${fmt.price(quote['52w_low'])}</div></div>
+        <div class="stat"><div class="stat-label">RSI 14</div><div class="stat-value">${lastRSI ? lastRSI.toFixed(1) : '—'} ${rsiPill}</div></div>
+      </div>
+    </div>
+
+    <!-- Price + Volume Chart -->
+    <div class="chart-panel">
+      <div class="panel-header">
+        <span class="panel-title">Preço + Volume</span>
+        <div class="period-bar">
+          ${['1mo','3mo','6mo','1y','2y'].map(p=>`<button class="period-btn ${p===state.activePeriod?'active':''}" onclick="changePeriod('${p}')">${p}</button>`).join('')}
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
+    </div>
+
+    <!-- RSI + MACD -->
+    <div class="indicators-grid">
+      <div class="chart-panel">
+        <div class="panel-header"><span class="panel-title">RSI (14)</span></div>
+        <div class="chart-wrap sm"><canvas id="rsiChart"></canvas></div>
+      </div>
+      <div class="chart-panel">
+        <div class="panel-header"><span class="panel-title">MACD (12, 26, 9)</span></div>
+        <div class="chart-wrap sm"><canvas id="macdChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Bollinger -->
+    <div class="chart-panel">
+      <div class="panel-header"><span class="panel-title">Bollinger Bands + Médias Móveis</span></div>
+      <div class="chart-wrap"><canvas id="bbChart"></canvas></div>
+    </div>`;
+
+  state._lastQuote = quote;
+  state._lastIndicators = indicators;
+
+  drawPriceChart(history.data, quote.currency);
+  drawRSI(indicators.data);
+  drawMACD(indicators.data);
+  drawBollinger(indicators.data);
+}
+
+// ── Quote card live patch ──────────────────────────────────────────────────
+function patchQuoteCard(q) {
+  const pcc = cc(q.change);
+  const priceEl  = document.getElementById('live-price');
+  const changeEl = document.getElementById('live-change');
+  const volEl    = document.getElementById('live-vol');
+  if (priceEl)  { priceEl.textContent  = fmt.price(q.price); priceEl.className  = 'quote-price '  + pcc; }
+  if (changeEl) {
+    changeEl.textContent = `${fmt.pct(q.change_pct)} ${q.change!=null?`(${q.change>0?'+':''}${fmt.price(q.change)})`:''}`;
+    changeEl.className = 'quote-change ' + pcc;
+  }
+  if (volEl) volEl.textContent = fmt.large(q.volume);
+}
+
+async function forceRefresh() {
+  if (!state.activeTicker) return;
+  try {
+    const q = await api('/quote/' + state.activeTicker);
+    patchQuoteCard(q);
+  } catch {}
+}
+
+// ── Chart helpers ──────────────────────────────────────────────────────────
+const C = {
+  accent:'#58a6ff', green:'#3fb950', red:'#f85149',
+  yellow:'#d29922', purple:'#bc8cff', muted:'#7d8590',
+  grid:'rgba(48,54,61,0.8)',
+};
+
+function baseOpts(yLabel='') {
+  return {
+    responsive:true, maintainAspectRatio:true,
+    animation:{duration:350},
+    plugins:{
+      legend:{labels:{color:C.muted, boxWidth:11, padding:10, font:{size:11}}},
+      tooltip:{mode:'index', intersect:false},
+    },
+    scales:{
+      x:{type:'time', time:{tooltipFormat:'dd/MM/yyyy'},
+        ticks:{color:C.muted, maxTicksLimit:7, maxRotation:0, font:{size:10}},
+        grid:{color:C.grid}},
+      y:{ticks:{color:C.muted, font:{size:10}}, grid:{color:C.grid},
+        title:{display:!!yLabel, text:yLabel, color:C.muted, font:{size:11}}},
+    },
+    interaction:{mode:'index', intersect:false},
+  };
+}
+
+// ── Price + Volume chart ───────────────────────────────────────────────────
+function drawPriceChart(data, currency='USD') {
+  destroyChart('price');
+  const ctx = document.getElementById('priceChart')?.getContext('2d');
+  if (!ctx) return;
+
+  const labels = data.map(d=>d.date);
+  const closes = data.map(d=>d.close);
+  const volumes = data.map(d=>d.volume);
+  const first = closes.find(v=>v!=null);
+  const last  = closes.filter(v=>v!=null).slice(-1)[0];
+  const up = last >= first;
+  const lineColor = up ? C.green : C.red;
+
+  const grad = ctx.createLinearGradient(0,0,0,240);
+  grad.addColorStop(0, up ? 'rgba(63,185,80,.22)' : 'rgba(248,81,73,.22)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+
+  state.charts.price = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        {type:'line', label:'Fechamento', data:closes,
+          borderColor:lineColor, backgroundColor:grad,
+          fill:true, pointRadius:0, tension:0.1, borderWidth:2,
+          yAxisID:'yP', order:1},
+        {type:'bar', label:'Volume', data:volumes,
+          backgroundColor:data.map((_,i)=>{
+            const c=closes[i], p=closes[i-1];
+            if(c==null||p==null) return 'rgba(88,166,255,.15)';
+            return c>=p ? 'rgba(63,185,80,.2)' : 'rgba(248,81,73,.2)';
+          }),
+          borderWidth:0, yAxisID:'yV', order:2},
+      ],
+    },
+    options:{
+      ...baseOpts(),
+      scales:{
+        x:{type:'time', time:{tooltipFormat:'dd/MM/yyyy'},
+          ticks:{color:C.muted, maxTicksLimit:7, maxRotation:0, font:{size:10}},
+          grid:{color:C.grid}},
+        yP:{position:'left', ticks:{color:C.muted, font:{size:10}}, grid:{color:C.grid},
+          title:{display:true, text:currency, color:C.muted, font:{size:11}}},
+        yV:{position:'right', ticks:{color:C.muted, font:{size:10}, callback:v=>fmt.large(v)},
+          grid:{display:false}, title:{display:true, text:'Volume', color:C.muted, font:{size:11}}},
+      },
+    },
+  });
+}
+
+// ── RSI chart ──────────────────────────────────────────────────────────────
+function drawRSI(data) {
+  destroyChart('rsi');
+  const ctx = document.getElementById('rsiChart')?.getContext('2d');
+  if (!ctx) return;
+
+  const rsiZonePlugin = {
+    id:'rsiZone',
+    afterDraw(chart) {
+      const {ctx:c, chartArea:{left,right}, scales:{y}} = chart;
+      if (!y) return;
+      c.save();
+      c.setLineDash([5,4]);
+      c.lineWidth = 1;
+      c.strokeStyle = 'rgba(248,81,73,.55)';
+      c.beginPath(); c.moveTo(left,y.getPixelForValue(70)); c.lineTo(right,y.getPixelForValue(70)); c.stroke();
+      c.strokeStyle = 'rgba(63,185,80,.55)';
+      c.beginPath(); c.moveTo(left,y.getPixelForValue(30)); c.lineTo(right,y.getPixelForValue(30)); c.stroke();
+      c.restore();
+    }
+  };
+
+  state.charts.rsi = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels:data.map(d=>d.date),
+      datasets:[{label:'RSI', data:data.map(d=>d.rsi),
+        borderColor:C.purple, pointRadius:0, borderWidth:1.5, fill:false, tension:0.1}],
+    },
+    options:{
+      ...baseOpts(),
+      scales:{...baseOpts().scales, y:{...baseOpts().scales.y, min:0, max:100}},
+    },
+    plugins:[rsiZonePlugin],
+  });
+}
+
+// ── MACD chart ─────────────────────────────────────────────────────────────
+function drawMACD(data) {
+  destroyChart('macd');
+  const ctx = document.getElementById('macdChart')?.getContext('2d');
+  if (!ctx) return;
+  state.charts.macd = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels:data.map(d=>d.date),
+      datasets:[
+        {type:'line', label:'MACD',  data:data.map(d=>d.macd),        borderColor:C.accent, pointRadius:0, borderWidth:1.5, fill:false, tension:0.1, order:1},
+        {type:'line', label:'Sinal', data:data.map(d=>d.macd_signal), borderColor:C.yellow, pointRadius:0, borderWidth:1.5, fill:false, tension:0.1, order:2},
+        {type:'bar',  label:'Hist',  data:data.map(d=>d.macd_hist),
+          backgroundColor:data.map(d=>(d.macd_hist??0)>=0?'rgba(63,185,80,.5)':'rgba(248,81,73,.5)'),
+          borderWidth:0, order:3},
+      ],
+    },
+    options:baseOpts(),
+  });
+}
+
+// ── Bollinger chart ────────────────────────────────────────────────────────
+function drawBollinger(data) {
+  destroyChart('bb');
+  const ctx = document.getElementById('bbChart')?.getContext('2d');
+  if (!ctx) return;
+  state.charts.bb = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels:data.map(d=>d.date),
+      datasets:[
+        {label:'BB Superior', data:data.map(d=>d.bb_upper), borderColor:'rgba(188,140,255,.4)', pointRadius:0, borderWidth:1, fill:'+1', backgroundColor:'rgba(188,140,255,.06)', tension:0.1},
+        {label:'BB Inferior', data:data.map(d=>d.bb_lower), borderColor:'rgba(188,140,255,.4)', pointRadius:0, borderWidth:1, fill:false, tension:0.1},
+        {label:'SMA 20', data:data.map(d=>d.sma20), borderColor:C.yellow, pointRadius:0, borderWidth:1.5, fill:false, tension:0.1, borderDash:[4,3]},
+        {label:'SMA 50', data:data.map(d=>d.sma50), borderColor:C.accent, pointRadius:0, borderWidth:1.5, fill:false, tension:0.1, borderDash:[8,4]},
+        {label:'Preço',   data:data.map(d=>d.close), borderColor:C.green, pointRadius:0, borderWidth:2,   fill:false, tension:0.1},
+      ],
+    },
+    options:baseOpts(),
+  });
+}
+
+// ── Period switch ──────────────────────────────────────────────────────────
+async function changePeriod(period) {
+  state.activePeriod = period;
+  if (!state.activeTicker) return;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.textContent===period));
+  try {
+    const h = await api('/history/' + state.activeTicker + '?period=' + period);
+    drawPriceChart(h.data, state._lastQuote?.currency);
+  } catch {}
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+renderWatchlist();
+</script>
+</body>
+</html>
