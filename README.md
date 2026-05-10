@@ -13,7 +13,7 @@ Dashboard de acompanhamento de ativos financeiros com cotações em tempo real, 
 
 ## Demo
 
-> [Link do deploy na Vercel] ← substitua após o deploy
+> https://vantage-nu-lime.vercel.app/
 
 ---
 
@@ -103,22 +103,18 @@ pip install -r requirements.txt
 
 # 4. Iniciar o servidor
 uvicorn main:app --reload
-```
+
+---
 
 Acesse: [http://localhost:8000](http://localhost:8000)
 
 Porta alternativa: `uvicorn main:app --reload --port 8080`  
-Rede local: `uvicorn main:app --host 0.0.0.0 --port 8000`
 
+Rede local: `uvicorn main:app --host 0.0.0.0 --port 8000`
+```
 ---
 
-## Deploy na Vercel
 
-**Requisitos:** conta na [Vercel](https://vercel.com) + Vercel CLI (`npm i -g vercel`)
-
-```bash
-vercel
-# Wizard: framework → Other · build command → vazio · output → vazio
 ```
 
 **Variáveis de ambiente:** nenhuma — usa apenas Yahoo Finance (público).
@@ -128,6 +124,7 @@ vercel
 - Cold start: ~2–3s na primeira request (yfinance + pandas são pesados)
 
 ---
+```
 
 ## Estrutura do projeto
 
