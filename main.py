@@ -186,6 +186,33 @@ def get_quotes(tickers: str):
     return {"quotes": results}
 
 
+@app.get("/api/sparklines")
+def get_sparklines(tickers: str):
+    """Batch mini-history for watchlist sparklines — up to 20 tickers, ~1mo of daily closes."""
+    ticker_list = [t.strip().upper() for t in tickers.split(",") if t.strip()][:20]
+
+    def fetch(t: str) -> dict | None:
+        cached = cache_get(f"spark:{t}", 300)
+        if cached:
+            return cached
+        try:
+            df = yf.Ticker(t).history(period="1mo", interval="1d")
+            closes = [clean(c) for c in df["Close"].tolist() if not math.isnan(float(c))]
+            if len(closes) < 2:
+                return None
+            change_pct = round((closes[-1] - closes[0]) / closes[0] * 100, 2) if closes[0] else None
+            result = {"ticker": t, "closes": closes, "change_pct": change_pct}
+            cache_set(f"spark:{t}", result)
+            return result
+        except Exception:
+            return None
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
+        results = [r for r in ex.map(fetch, ticker_list) if r is not None]
+
+    return {"sparklines": results}
+
+
 @app.get("/api/history/{ticker}")
 def get_history(ticker: str, period: str = "3mo", interval: str = "1d"):
     valid_periods = ["1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y"]
